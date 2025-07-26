@@ -1,0 +1,27 @@
+#variables
+name= "sharon"
+age= 29
+height= 1.68
+weight= 75
+is_student= True
+is_employed= False
+favourite_number= 7
+status= "student" if is_student else "professional"
+#derived calculations
+age_in_days = age*365
+height_in_inches = height*12
+bmi = (weight/height_in_inches ** 2) *703
+is_adult = age>=18
+#formatted profile
+profile= print(f"""
+PERSONAL PROFILE
+================
+Name: {name}
+Age: {age}years ({age_in_days:,}days old!)
+Height:{height} feet ({height_in_inches:.1f} inches)
+Weight:{weight} lbs
+BMI: {bmi:.1f}
+Status: {status}
+Adult:{"yes" if is_adult else "no"}
+Lucky Number: {favourite_number}
+""")
