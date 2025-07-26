@@ -1,0 +1,80 @@
+def process_text(text):
+    # Remove extra spaces and leading/trailing whitespace
+    cleaned_text = " ".join(text.split())
+    
+    #Capitalize properly (Title Case)
+    title_case_text = cleaned_text.title()
+    
+    #Count words and characters
+    word_count = len(cleaned_text.split())
+    char_count = len(cleaned_text)
+    
+    # Count sentences 
+    sentence_count = (cleaned_text.count('.') +
+                      cleaned_text.count('!') +
+                      cleaned_text.count('?'))
+    
+    # Format output as a professional report
+    report = f"""
+TEXT PROCESSING REPORT
+---------------------------------
+Original Text:
+{text}
+
+Processed Text:
+{title_case_text}
+
+Statistics:
+- Total Words: {word_count}
+- Total Characters (with spaces): {char_count}
+- Total Sentences: {sentence_count}
+"""
+    return report
+
+# Ask user for input manually
+user_text = input("Enter your text: ")
+#input: "   hello    world!   welcome to   genai. this is    amazing!  "
+
+# Run the function with user input
+print(process_text(user_text))
+
+
+
+#using REGEX 
+
+import re
+
+def process_text(text):
+    # Remove extra spaces and leading/trailing whitespace
+    cleaned_text = " ".join(text.split())
+    
+    #Capitalize properly (Title Case)
+    title_case_text = cleaned_text.title()
+    
+    # Count words, characters, and sentences
+    word_count = len(cleaned_text.split())
+    char_count = len(cleaned_text)
+    sentence_count = len(re.findall(r'[.!?]', cleaned_text))
+    
+    # Format output as a professional report
+    report = f"""
+ TEXT PROCESSING REPORT
+---------------------------------
+Original Text:
+{text}
+
+Processed Text:
+{title_case_text}
+
+Statistics:
+- Total Words: {word_count}
+- Total Characters (with spaces): {char_count}
+- Total Sentences: {sentence_count}
+"""
+    return report
+
+# Ask user for input manually
+user_text = input("Enter your text: ")
+
+# Run the function with user input
+print(process_text(user_text))
