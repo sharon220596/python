@@ -1,0 +1,72 @@
+students = {}
+# Adding sample students
+students = {
+    "Alice": {"Math": 85, "Science": 92, "English": 78, "History": 88},
+    "Bob": {"Math": 78, "Science": 85, "English": 82, "History": 79},
+    "Carol": {"Math": 95, "Science": 89, "English": 91, "History": 87},
+    "David": {"Math": 70, "Science": 75, "English": 80, "History": 72},
+    "Eva": {"Math": 88, "Science": 90, "English": 85, "History": 89}
+}
+def calculate_student_average(grades_dict):
+    """Calculate average grade for a student"""
+    total = sum(grades_dict.values())
+    count = len(grades_dict)
+    return total / count
+def find_top_performer(students_dict):
+    """Find student with highest average"""
+    top_student = None
+    top_average = -1
+    for student, grades in students_dict.items():
+        avg = calculate_student_average(grades)
+        if avg > top_average:
+            top_average = avg
+            top_student = student
+    return top_student, top_average
+def get_class_statistics(students_dict):
+    """Calculate class-wide statistics"""
+    total_grades = 0
+    total_count = 0
+    subject_totals = {}
+    subject_counts = {}
+    # Initialize subject totals and counts
+    for grades in students_dict.values():
+        for subject, grade in grades.items():
+            subject_totals[subject] = subject_totals.get(subject, 0) + grade
+            subject_counts[subject] = subject_counts.get(subject, 0) + 1
+            total_grades += grade
+            total_count += 1
+    overall_avg = total_grades / total_count if total_count else 0
+    subject_averages = {sub: subject_totals[sub]/subject_counts[sub] for sub in subject_totals}
+    return overall_avg, subject_averages
+def find_students_by_grade_range(students_dict, min_grade):
+    """Find students above minimum grade"""
+    result = []
+    for student, grades in students_dict.items():
+        avg = calculate_student_average(grades)
+        if avg >= min_grade:
+            result.append(student)
+    return result
+
+
+# Calculate and display individual averages
+for student, grades in students.items():
+    avg = calculate_student_average(grades)
+    print(f"{student}'s average: {avg:.2f}")
+
+# Find and display top performer
+top_student, top_avg = find_top_performer(students)
+print("---------------------------------------")
+print(f"Top performer: {top_student} ({top_avg:.1f})")
+
+# Calculate and display class statistics
+overall_avg, subject_avgs = get_class_statistics(students)
+print("---------------------------------------")
+print(f"Class overall average: {overall_avg:.1f}")
+print("Subject-wise averages:")
+for subject, avg in subject_avgs.items():
+    print(f"{subject}: {avg:.1f}")
+
+# Find students with average >= 85
+high_achievers = find_students_by_grade_range(students, 85)
+print("Students with average >= 85:")
+print(high_achievers)
