@@ -1,0 +1,39 @@
+import string
+
+def clean_text(text):
+   
+    return text.lower().translate(str.maketrans('' , '', string.punctuation))
+
+def analyze_text(text):
+    # Step 1: Clean and split text
+    cleaned = clean_text(text)
+    
+    words = cleaned.split()
+    total_words = len((words))
+    
+   # Step 2: Find unique words
+    unique_words = set(words)
+    unique_count = len(unique_words)
+    
+   # Step 3: Count frequencies
+    freq_dict = {}
+    for word in words:
+        freq_dict[word] = freq_dict.get(word, 0) + 1
+    
+    # Step 4: Find most common
+    sorted_words = sorted(freq_dict.items(), key=lambda x: x[1], reverse=True)
+    
+    top_3 = sorted_words[:3]
+    
+    # Print output in required format
+    print(f"Total words: {total_words}")
+    print(f"Unique words: {unique_count}")
+    print(f"Word frequencies: {freq_dict}")
+    print(f"Top 3 words: {top_3}")
+
+#  Input Text
+text = """Python is amazing. Python makes data analysis easy.
+Data analysis with Python is powerful and easy."""
+
+#  Run analysis
+analyze_text(text)
