@@ -1,0 +1,61 @@
+def get_number(prompt):
+    # Handle ValueError for invalid numbers
+    while True:
+        try:
+            return float(input(prompt))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+    pass
+
+def get_operation():
+    # Handle invalid operations
+    supported_operation = ['+', '-', '*', '/']
+    print("Supported operations: +, -, *, /")
+  
+    while True:
+        operation = input("Enter an operation (+, -, *, /): ")
+        if operation in supported_operation:
+            return operation
+        else:
+            print("Invalid operation. Please enter +, -, *, or /.")
+    pass
+
+def calculate(num1, num2, operation):
+    # Handle ZeroDivisionError and other calculation errors
+    try:
+        if operation == '+':
+            return num1 + num2
+        elif operation == '-':
+            return num1 - num2
+        elif operation == '*':
+            return num1 * num2
+        elif operation == '/':
+            return num1 / num2
+
+    except ZeroDivisionError:
+        print("Error: Division by zero is not allowed.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    pass
+  
+
+def main():
+    # Main program loop with continue/quit option
+    while True:
+        num1 = get_number("Enter the first number: ")
+        num2 = get_number("Enter the second number: ")
+        operation = get_operation()
+        result = calculate(num1, num2, operation)
+        print(f"Result: {result}")
+        
+        # Ask if the user wants to continue
+        choice = input("Do you want to perform another calculation? (yes/no): ").lower() 
+        if choice!= 'yes':
+            print("Goodbye!")
+            break
+    pass
+
+if __name__ == "__main__":
+    main()
+    
