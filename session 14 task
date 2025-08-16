@@ -41,6 +41,18 @@ class SalesAnalyzer:
         for region, revenue in region_sales.items():
             print(f"{region}: {'#' * (revenue // 500)} ({revenue})")
 
+    def create_bar_chart(self):
+        """Generate simple text charts"""
+        region_sales = self.sales_by_region()
+            
+        max_value = max(region_sales.values())
+        max_width = 50  # Maximum bar width
+        print("\n Sales by Region:")
+        for region, revenue in region_sales.items():
+          bar_length = int((revenue / max_value) * max_width)
+          bar = "█" * bar_length
+          print(f"{region}: { '█'  * (revenue // 500)} ({revenue})")
+
     def generate_report(self):
         """Generate full summary report"""
         print("====== Sales Report ======")
@@ -49,9 +61,20 @@ class SalesAnalyzer:
         for product, revenue in self.top_products():
             print(f"  {product}: ${revenue}")
         self.create_visualizations()
+        self.create_bar_chart()
         print("==========================")
 
 
 
 analyzer = SalesAnalyzer("sales_data.csv")
 analyzer.generate_report()
+
+sales_data.csv:
+
+product,price,quantity,date,region
+Laptop,1200,5,2024-01-15,North
+Phone,800,10,2024-01-16,South
+Tablet,600,7,2024-01-17,East
+Phone,800,3,2024-01-18,West
+Laptop,1200,2,2024-01-19,North
+      
