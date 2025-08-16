@@ -1,0 +1,48 @@
+# File: utils.py
+def capitalize_words(text):
+    """Capitalize each word in a string"""
+    return ' '.join(word.capitalize() for word in text.split())
+
+    pass
+
+def count_vowels(text):
+    """Count vowels in a string"""
+    # Your implementation here
+    vowels = "aeiouAEIOU"
+    count = sum(1 for char in text if char in vowels)
+    return count
+
+    pass
+
+def factorial(n):
+    """Calculate factorial of a number"""
+    # Your implementation here
+    if n == 0:
+        return 1
+    else:
+        result = 1
+        for i in range(1, n + 1):
+            result *= i
+        return result
+    pass
+def calculate_percentage(part, whole):
+    """Calculate percentage"""
+    return (part / whole) * 100
+    pass
+
+def get_average(numbers):
+    """Calculate average of list of numbers"""
+    return sum(numbers) / len(numbers)
+    pass
+
+#calling in main
+# File: main.py
+from utils import capitalize_words, count_vowels, factorial, get_average, calculate_percentage
+
+# Test all functions
+print("Capitalized words:", capitalize_words("hello world from ai"))
+print("Number of vowels:", count_vowels("hello world"))
+print("Factorial of 5:", factorial(5))
+print("Average of numbers:", get_average([85, 92, 78, 96, 88]))
+print("Percentage:", calculate_percentage(85, 100))
+
