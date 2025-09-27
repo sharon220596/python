@@ -1,0 +1,48 @@
+from langchain.prompts import PromptTemplate
+from langchain_ollama import OllamaLLM
+from langchain_core.runnables import RunnableSequence
+document = """
+Python is a high-level programming language. It's known for its simplicity and readability.
+Python is widely used in data science, web development, and AI applications.
+"""
+# User Question
+user_question = "What are the main uses of Python?"
+#Define the templates
+doc_template = PromptTemplate(
+    input_variables=["document"],
+    template="Analyze the following document and summarize key points:\n\n{document}\n\nSummary:"
+)
+
+qa_template = PromptTemplate(
+    input_variables=["document", "question"],
+    template=(
+        "You are a helpful assistant. Based on the document below, answer the question clearly.\n\n"
+        "Document:\n{document}\n\n"
+        "Question: {question}\n\n"
+        "Answer:"
+    )
+)
+
+format_template = PromptTemplate(
+    input_variables=["answer"],
+    template="Format the final answer professionally:\n\n{answer}"
+)
+
+#Create LLM object
+llm = OllamaLLM(model="mistral", temperature=0.7)
+
+# Create chains (modular pipeline)
+doc_chain = doc_template | llm
+qa_chain = qa_template | llm
+format_chain = format_template | llm
+
+#  Run pipeline
+# Document analysis
+summary = doc_chain.invoke({"document": document})
+# Question answering
+answer = qa_chain.invoke({"document": summary, "question": user_question})
+# Formatting
+final_answer = format_chain.invoke({"answer": answer})
+
+print(" Document Summary:\n", summary)
+print("\n Answer:\n", final_answer)
