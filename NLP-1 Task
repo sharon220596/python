@@ -1,0 +1,46 @@
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from collections import Counter
+
+#Download required NLTK data (only first time)
+#nltk.download('punkt')
+#nltk.download('punkt_tab')
+#nltk.download('stopwords')
+
+def text_breakdown_tool(text):
+    """
+    Analyze the input text and return breakdown statistics.
+    """
+
+    # Tokenize (split into words)
+    tokens = word_tokenize(text.lower())
+
+    # Remove stopwords
+    stop_words = set(stopwords.words('english'))
+    clean_tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
+
+    # Count word frequencies
+    word_freq = Counter(clean_tokens)
+
+    # Prepare results
+    result = {
+        "total_words": len(tokens),
+        "unique_words": len(set(clean_tokens)),
+        "top_words": word_freq.most_common(5),
+        "removed_stopwords": [word for word in tokens if word.lower() in stop_words]
+    }
+
+    return result
+
+
+# Example Input
+text = "Natural language processing is amazing! It helps computers understand natural language better."
+
+# Run the function
+output = text_breakdown_tool(text)
+
+# Show the output
+print("Text Analysis Result:")
+for key, value in output.items():
+    print(f"{key}: {value}")
