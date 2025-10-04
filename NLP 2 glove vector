@@ -1,0 +1,21 @@
+#install required packages
+pip install gensim
+#download glove embeddings
+!wget http://nlp.stanford.edu/data/glove.6B.zip
+#extract files
+!unzip glove.6B.zip
+#convert glove to word2vec format
+from gensim.scripts.glove2word2vec import glove2word2vec
+
+glove_input_file = 'glove.6B.100d.txt'
+word2vec_output_file = 'glove.6B.100d.word2vec.txt'
+glove2word2vec(glove_input_file, word2vec_output_file)
+#load model in gensim
+import gensim
+
+model = gensim.models.KeyedVectors.load_word2vec_format('glove.6B.100d.word2vec.txt', binary=False)
+#find synonymns
+word = "sad"
+print(f"Top synonyms for '{word}':")
+for synonym, similarity in model.most_similar(word, topn=5):
+    print(f"{synonym} → {similarity:.4f}")
