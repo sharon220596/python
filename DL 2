@@ -1,0 +1,216 @@
+import time
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import matplotlib.pyplot as plt
+from typing import List, Tuple, Dict
+
+# Reproducibility
+SEED = 42
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+
+# Simple synthetic binary classification dataset (2D) ----
+def make_synthetic_binary_data(n_samples=1000):
+    # Two clusters separable by a line with noise
+    x_pos = np.random.randn(n_samples // 2, 2) + np.array([1.5, 1.0])
+    x_neg = np.random.randn(n_samples // 2, 2) + np.array([-1.5, -1.0])
+    X = np.vstack([x_pos, x_neg]).astype(np.float32)
+    y = np.hstack([np.ones(n_samples // 2), np.zeros(n_samples // 2)]).astype(np.int64)
+    # shuffle
+    idx = np.random.permutation(n_samples)z
+    return torch.tensor(X[idx]), torch.tensor(y[idx])
+
+# Small MLP model
+class SimpleMLP(nn.Module):
+    def __init__(self, input_dim=2, hidden=16, num_classes=2):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, num_classes)  # logits (for CE) or pre-softmax (for MSE usage below)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+# LossExplorer class 
+class LossExplorer:
+    def __init__(self, loss_type: str = "cross_entropy", optimizer_type: str = "sgd", lr: float = 0.01, device=None):
+        """
+        loss_type: "mse" or "cross_entropy"
+        optimizer_type: "sgd" or "adam"
+        lr: learning rate
+        """
+        self.loss_type = loss_type.lower()
+        self.optimizer_type = optimizer_type.lower()
+        self.lr = lr
+        self.device = device or (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
+        self._build_defaults()
+
+    def _build_defaults(self):
+        self.model = SimpleMLP().to(self.device)
+        if self.loss_type == "cross_entropy":
+            self.loss_fn = nn.CrossEntropyLoss()
+        elif self.loss_type == "mse":
+            # We'll use MSE between one-hot probs and softmax outputs
+            self.loss_fn = nn.MSELoss()
+        else:
+            raise ValueError("loss_type must be 'mse' or 'cross_entropy'")
+
+        if self.optimizer_type == "sgd":
+            self.optimizer = optim.SGD(self.model.parameters(), lr=self.lr)
+        elif self.optimizer_type == "adam":
+            self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
+        else:
+            raise ValueError("optimizer_type must be 'sgd' or 'adam'")
+
+    def train_and_plot(self, X: torch.Tensor, y: torch.Tensor, epochs: int = 100, batch_size: int = 64, verbose=True) -> Dict:
+        """
+        Train the model and produce loss curve, final loss, training time, and convergence analysis.
+        Returns a dictionary with keys: losses, final_loss, training_time, converged (bool), slope_last_segment
+        """
+        X = X.to(self.device)
+        y = y.to(self.device)
+        n = X.shape[0]
+
+        losses = []
+        t0 = time.time()
+
+        for epoch in range(epochs):
+            # Simple mini-batch loop (shuffled)
+            perm = torch.randperm(n)
+            epoch_losses = []
+            for i in range(0, n, batch_size):
+                idx = perm[i:i+batch_size]
+                xb = X[idx]
+                yb = y[idx]
+
+                logits = self.model(xb)
+
+                if self.loss_type == "cross_entropy":
+                    loss = self.loss_fn(logits, yb)
+                else:  # mse
+                    # convert yb to one-hot and compute softmax then MSE
+                    one_hot = torch.zeros((yb.size(0), 2), device=self.device)
+                    one_hot.scatter_(1, yb.view(-1,1), 1.0)
+                    probs = torch.softmax(logits, dim=1)
+                    loss = self.loss_fn(probs, one_hot)
+
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+                epoch_losses.append(loss.item())
+
+            epoch_loss = float(np.mean(epoch_losses))
+            losses.append(epoch_loss)
+
+            if verbose and (epoch % max(1, epochs//10) == 0 or epoch == epochs-1):
+                print(f"Epoch {epoch+1}/{epochs} - loss: {epoch_loss:.6f}")
+
+        training_time = time.time() - t0
+        final_loss = losses[-1]
+
+        # Convergence analysis: fit a line to last 20% of loss points and inspect slope
+        last_frac = 0.2
+        k = max(3, int(len(losses)*last_frac))
+        xs = np.arange(len(losses)-k, len(losses))
+        ys = np.array(losses[-k:])
+        slope, intercept = np.polyfit(xs, ys, 1)
+        # heuristics: if slope magnitude small and negative -> converged; if positive -> diverging
+        converged = (abs(slope) < 1e-4 and slope <= 0) or (slope < 0 and abs(slope) < 1e-2)
+
+        # Plot loss curve
+        plt.figure(figsize=(6,4))
+        plt.plot(losses, label=f"{self.loss_type.upper()} + {self.optimizer_type.upper()}, lr={self.lr}")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Training Loss Curve")
+        plt.grid(alpha=0.3)
+        plt.legend()
+        plt.show()
+
+        # Print summary
+        print("-"*30)
+        print(f"Final loss: {final_loss:.6f}")
+        print(f"Training time: {training_time:.3f} sec")
+        print(f"Convergence slope (last {k} epochs): {slope:.6e}")
+        print("Converged according to simple heuristic?:", converged)
+        print("-"*30)
+
+        return {
+            "losses": losses,
+            "final_loss": final_loss,
+            "training_time": training_time,
+            "slope_last_segment": float(slope),
+            "converged": bool(converged)
+        }
+
+    def compare_configurations(self, X: torch.Tensor, y: torch.Tensor, configs: List[Tuple[str,str,float]], epochs=100):
+        """
+        configs: list of tuples (loss_type, optimizer_type, lr)
+        Will run each config from scratch and plot loss curves for comparison.
+        """
+        results = {}
+        plt.figure(figsize=(8,5))
+        for loss_type, opt_type, lr in configs:
+            # create fresh instance for each config
+            ex = LossExplorer(loss_type=loss_type, optimizer_type=opt_type, lr=lr, device=self.device)
+            res = ex.train_and_return_losses_only(X, y, epochs=epochs)
+            results[(loss_type, opt_type, lr)] = res
+            plt.plot(res, label=f"{loss_type.upper()} + {opt_type.upper()} (lr={lr})")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Comparison of Loss Curves")
+        plt.legend()
+        plt.grid(alpha=0.3)
+        plt.show()
+        return results
+
+    def train_and_return_losses_only(self, X: torch.Tensor, y: torch.Tensor, epochs: int=100):
+        # helper used in compare_configurations to avoid duplicate plotting/printing
+        X = X.to(self.device); y = y.to(self.device)
+        n = X.shape[0]
+        losses = []
+        for epoch in range(epochs):
+            perm = torch.randperm(n)
+            epoch_losses = []
+            for i in range(0, n, 64):
+                idx = perm[i:i+64]
+                xb = X[idx]; yb = y[idx]
+                logits = self.model(xb)
+                if self.loss_type == "cross_entropy":
+                    loss = self.loss_fn(logits, yb)
+                else:
+                    one_hot = torch.zeros((yb.size(0), 2), device=self.device)
+                    one_hot.scatter_(1, yb.view(-1,1), 1.0)
+                    probs = torch.softmax(logits, dim=1)
+                    loss = self.loss_fn(probs, one_hot)
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+                epoch_losses.append(loss.item())
+            losses.append(float(np.mean(epoch_losses)))
+        return losses
+
+# --------------------------
+# Example usage:
+# --------------------------
+if __name__ == "__main__":
+    # prepare data
+    X, y = make_synthetic_binary_data(n_samples=1000)
+
+    # single run example: CrossEntropy + Adam, lr=0.01
+    explorer = LossExplorer(loss_type="cross_entropy", optimizer_type="adam", lr=0.01)
+    result = explorer.train_and_plot(X, y, epochs=120)
+
+    # compare several configurations (this will plot multiple loss curves)
+    configs_to_try = [
+        ("cross_entropy", "sgd", 0.01),
+        ("cross_entropy", "adam", 0.01),
+        ("mse", "sgd", 0.01),
+        ("mse", "adam", 0.01)
+    ]
+    print("\nRunning comparison of configurations (this may take a little longer)...")
+    explorer.compare_configurations(X, y, configs_to_try, epochs=100)
